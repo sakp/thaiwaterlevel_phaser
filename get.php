@@ -1,0 +1,136 @@
+<?php
+header('Content-Type: application/json');
+$date = $_GET['date'];
+if(preg_match("/^2[0-9]{3}-[0-9]{2}-[0-9]{2}$/", $date)){
+    $html = file_get_contents('http://www.thaiwater.net/DATA/REPORT/php/rid_bigcm.php?sdate='.$date);
+    $html = str_replace('&nbsp;', '', $html);
+    $html = str_replace('<tr>', '</tr><tr>', $html);
+    $html = strip_tags($html, '<table><td><tr>');
+    $html = str_replace("\r\n", "", $html);
+    $html = str_replace("\n", "", $html);
+    $html = str_replace("<table ", "\n<table ", $html);
+    $html = explode("\n", $html);
+    foreach($html as $table):
+        if(preg_match("/ภาคเหนือ/", $table)):
+            $html = $table; 
+            break;
+        endif;
+    endforeach;
+
+    $html = strip_tags($html, '<td><tr>');
+    $html = str_replace("</tr>", "\n", $html);
+    $html = str_replace("</td>", ",,", $html);
+    $html = strip_tags($html);
+    $html = explode("\n", $html);
+    $start = 0;
+    foreach($html as $index => $cell):
+        if(preg_match("/ภาคเหนือ/", $cell)):
+            $start = $index;
+            break;      
+        endif;
+    endforeach;
+    $html = array_slice($html, $start);
+    $tmp_regionname = "";
+    $region = array();
+    $summary = array();
+    $dam_name = array();
+    $dam_name_eng = array();
+    $region_name = array();
+    $region_name_eng = array();
+    $template = array(
+        "ความจุที่ระดับน้ำเก็บกักของอ่าง (รนก.)",
+        "ปี 2558 - ปริมาตรน้ำในอ่างฯ",
+        "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
+        "% เทียบ รนก. - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
+        "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ใช้การได้จริง)",
+        "% เทียบ รนก. - ปริมาตรน้ำในอ่างฯ (ใช้การได้จริง)",
+        "ค่าเฉลี่ย รวมทั้งปี - ปริมาตรน้ำไหลลงอ่างฯ",
+        "ปริมาตรน้ำ - ปริมาตรน้ำไหลลงอ่างฯ ",
+        "ปริมาตร - ปริมาตรน้ำไหลลงอ่างฯ (สะสมตั้งแต่ 1 ม.ค. 59)",
+        "% เทียบกับค่าเฉลี่ยทั้งปี - ปริมาตรน้ำไหลลงอ่างฯ (สะสมตั้งแต่ 1 ม.ค. 59)",
+        "วันนี้ - ปริมาณน้ำระบาย",
+        "สะสมตั้งแต่ 1 ม.ค. 59 - ปริมาณน้ำระบาย ",
+    );
+    $region_english_name = array(
+        "ภาคเหนือ" => "Northern",
+        "ภาคตะวันออกเฉียงเหนือ" => "Northeastern",
+        "ภาคกลาง" => "Central",
+        "ภาคตะวันตก" => "Western",
+        "ภาคตะวันออก" => "Eastern",
+        "ภาคใต้" => "Southern",
+    );
+    $dam_english_name = array(
+        "เขื่อนภูมิพล" => "Bhumibol Dam",
+        "เขื่อนสิริกิติ์" => "Sirikit Dam",
+        "เขื่อนแม่งัด" => "Mae Ngat Somboon Chon Dam",
+        "เขื่อนกิ่วลม" => "",
+        "เขื่อนแม่กวง" => "Mae Kuang Udom Thara",
+        "เขื่อนกิ่วคอหมา" => "",
+        "เขื่อนแควน้อย" => "",
+        "เขื่อนลำปาว" => "",
+        "เขื่อนลำตะคอง" => "Lam Takhong Dam",
+        "เขื่อนลำพระเพลิง" => "Lam Phra Phloeng Dam",
+        "เขื่อนน้ำอูน" => "",
+        "เขื่อนอุบลรัตน์" => "Ubol Ratana Dam",
+        "เขื่อนสิรินธร" => "Sirindhorn Dam",
+        "เขื่อนจุฬาภรณ์" => "Chulabhorn Dam",
+        "เขื่อนห้วยหลวง" => "",
+        "เขื่อนลำนางรอง" => "",
+        "เขื่อนมูลบน" => "",
+        "เขื่อนน้ำพุง" => "Nam Pung Dam",
+        "เขื่อนลำแซะ" => "",
+        "เขื่อนป่าสักฯ" => "Pa Sak Jolasid Dam",
+        "เขื่อนกระเสียว" => "",
+        "เขื่อนทับเสลา" => "",
+        "เขื่อนศรีนครินทร์" => "Srinagarind Dam",
+        "เขื่อนวชิราลงกรณ" => "Vajiralongkorn Dam",
+        "เขื่อนบางพระ" => "",
+        "เขื่อนหนองปลาไหล" => "",
+        "เขื่อนคลองสียัด" => "",
+        "เขื่อนขุนด่านปราการชล" => "",
+        "เขื่อนประแสร์" => "",
+        "เขื่อนแก่งกระจาน" => "Kaeng Krachan Dam",
+        "เขื่อนปราณบุรี" => "",
+        "เขื่อนรัชชประภา" => "",
+        "เขื่อนบางลาง" => "Bang Lang Dam"
+    );
+    foreach($html as $index => $cell):
+        
+        if(!preg_match("/,,/", $cell)){
+            $cell = trim($cell);
+            if($cell != $tmp_regionname){
+                $tmp_regionname = $cell;
+                $region[$tmp_regionname] = array();
+                $region_name[] = $tmp_regionname;
+                $region_name_eng[] = $region_english_name[trim($tmp_regionname)];
+            }
+            continue;
+        }
+        $clean = explode(",,", $cell);
+        $name  = trim($clean[0]);
+        $clean = array_slice($clean, 1, 12);
+        $clean = array_combine($template, $clean);
+        if(preg_match("/^รวม/", $name)){
+            $summary[$name] = $clean;
+            continue;
+        }
+        $dam_name[] = $name;
+        if(!empty($dam_english_name[$name])){
+            $dam_name_eng[] = $dam_english_name[$name];
+        }else{
+            $dam_name_eng[] = $name;
+        }
+        $region[$tmp_regionname][$name] = $clean;
+    endforeach;
+
+    echo json_encode(array(
+        'region' => $region,
+        'summary' => $summary,
+        'all_region' => $region_name,
+        'all_region_english' => $region_name_eng,
+        'all_dam' => $dam_name,
+        'all_dam_eng' => $dam_name_eng
+    ), JSON_PRETTY_PRINT);
+}else{
+    echo json_encode(array('message' => 'incorrect date format'), JSON_PRETTY_PRINT);
+}
