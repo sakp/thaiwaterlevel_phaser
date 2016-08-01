@@ -32,14 +32,16 @@ if(preg_match("/^2[0-9]{3}-[0-9]{2}-[0-9]{2}$/", $date)){
     $html = array_slice($html, $start);
     $tmp_regionname = "";
     $region = array();
+    $region_eng = array();
     $summary = array();
+    $summary_eng = array();
     $dam_name = array();
     $dam_name_eng = array();
     $region_name = array();
     $region_name_eng = array();
     $column_name = array(
         "ความจุที่ระดับน้ำเก็บกักของอ่าง (รนก.)",
-        "ปี 2558 - ปริมาตรน้ำในอ่างฯ",
+        "ปีที่แล้ว - ปริมาตรน้ำในอ่างฯ",
         "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
         "% เทียบ รนก. - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
         "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ใช้การได้จริง)",
@@ -52,18 +54,18 @@ if(preg_match("/^2[0-9]{3}-[0-9]{2}-[0-9]{2}$/", $date)){
         "สะสมตั้งแต่ต้นปี - ปริมาณน้ำระบาย ",
     );
     $column_name_eng = array(
-        "ความจุที่ระดับน้ำเก็บกักของอ่าง (รนก.)",
-        "ปี 2558 - ปริมาตรน้ำในอ่างฯ",
-        "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
-        "% เทียบ รนก. - ปริมาตรน้ำในอ่างฯ (ปัจจุบัน)",
-        "ปริมาตรน้ำ - ปริมาตรน้ำในอ่างฯ (ใช้การได้จริง)",
-        "% เทียบ รนก. - ปริมาตรน้ำในอ่างฯ (ใช้การได้จริง)",
-        "ค่าเฉลี่ย รวมทั้งปี - ปริมาตรน้ำไหลลงอ่างฯ",
-        "ปริมาตรน้ำ - ปริมาตรน้ำไหลลงอ่างฯ ",
-        "ปริมาตร - ปริมาตรน้ำไหลลงอ่างฯ (สะสมตั้งแต่ 1 ม.ค. 59)",
-        "% เทียบกับค่าเฉลี่ยทั้งปี - ปริมาตรน้ำไหลลงอ่างฯ (สะสมตั้งแต่ 1 ม.ค. 59)",
-        "วันนี้ - ปริมาณน้ำระบาย",
-        "สะสมตั้งแต่ 1 ม.ค. 59 - ปริมาณน้ำระบาย ",
+        "Total Capacity",
+        "Water Volume - last year",
+        "Water Volumn - Storage level",
+        "Water Volumn (%) - Storage level)",
+        "Usable storage - Storage level",
+        "Usable storage (%) - Storage level",
+        "Cumulative total this water year - Inflow",
+        "Volume - Inflow ",
+        "Volume - Inflow (this year)",
+        "compare to this water year in average (%) - Inflow (this year)",
+        "Today - Outflow",
+        "Cumulative total this water year - Outflow",
     );
     $region_english_name = array(
         "ภาคเหนือ" => "Northern",
@@ -114,7 +116,9 @@ if(preg_match("/^2[0-9]{3}-[0-9]{2}-[0-9]{2}$/", $date)){
             $cell = trim($cell);
             if($cell != $tmp_regionname){
                 $tmp_regionname = $cell;
+                $tmp_regionname_eng = $region_english_name[trim($tmp_regionname)];
                 $region[$tmp_regionname] = array();
+                $region_eng[$tmp_regionname_eng] = array();
                 $region_name[] = $tmp_regionname;
                 $region_name_eng[] = $region_english_name[trim($tmp_regionname)];
             }
@@ -124,22 +128,28 @@ if(preg_match("/^2[0-9]{3}-[0-9]{2}-[0-9]{2}$/", $date)){
         $name  = trim($clean[0]);
         $clean = array_slice($clean, 1, 12);
         $clean = array_combine($column_name, $clean);
+        $clean_eng = array_combine($column_name_eng, $clean);
         if(preg_match("/^รวม/", $name)){
             $summary[$name] = $clean;
+            $summary_eng[$dam_english_name[$name]] = $clean_eng;
             continue;
         }
         $dam_name[] = $name;
+        $name_eng = $dam_english_name[$name];
         if(!empty($dam_english_name[$name])){
             $dam_name_eng[] = $dam_english_name[$name];
         }else{
             $dam_name_eng[] = $name;
         }
         $region[$tmp_regionname][$name] = $clean;
+        $region_eng[$tmp_regionname_eng][$name_eng] = $clean_eng;
     endforeach;
 
     echo json_encode(array(
         'region' => $region,
+        'region_eng' => $region_eng,
         'summary' => $summary,
+        'summary_eng' => $summary_eng,
         'all_region' => $region_name,
         'all_region_english' => $region_name_eng,
         'all_dam' => $dam_name,
